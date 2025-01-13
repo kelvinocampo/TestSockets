@@ -82,7 +82,8 @@
 
     <script>
         // Conectar al servidor Socket.IO
-        const socket = io('http://localhost:3000');
+        const PORT = procces.env.PORT || 3000;
+        const socket = io(`http://localhost:${PORT}`);
 
         // Elementos del DOM
         const messagesDiv = document.getElementById('messages');
