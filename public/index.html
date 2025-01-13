@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat en Tiempo Real</title>
-    <script src="https://cdn.socket.io/4.5.1/socket.io.min.js"></script>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -14,19 +14,31 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f4f4f9;
         }
 
-        #chat {
+        #chat-container {
             width: 100%;
-            max-width: 600px;
-            margin-top: 20px;
+            max-width: 500px;
+            background: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
 
         #messages {
-            border: 1px solid #ccc;
-            padding: 10px;
             height: 300px;
-            overflow-y: auto;
+            overflow-y: scroll;
+            border: 1px solid #ccc;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #fafafa;
+        }
+
+        #messages div {
             margin-bottom: 10px;
         }
 
@@ -35,56 +47,82 @@
             gap: 10px;
         }
 
-        #form input {
-            padding: 10px;
+        input[type="text"] {
             flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
         }
 
-        #form button {
+        button {
             padding: 10px;
+            background: #007bff;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0056b3;
         }
     </style>
 </head>
 
 <body>
-    <h1>Chat en Tiempo Real</h1>
-    <div id="chat">
+    <div id="chat-container">
+        <h2>Chat en Tiempo Real</h2>
         <div id="messages"></div>
         <form id="form">
-            <input id="name" type="text" placeholder="Tu nombre" required>
-            <input id="message" type="text" placeholder="Escribe un mensaje" required>
+            <input id="username" type="text" placeholder="Tu nombre" required />
+            <input id="message" type="text" placeholder="Escribe un mensaje..." required />
             <button type="submit">Enviar</button>
         </form>
     </div>
 
     <script>
-        const socket = io();
+        // Conectar al servidor Socket.IO
+        const socket = io('http://localhost:3000');
 
-        // Referencias a los elementos del DOM
-        const form = document.getElementById('form');
-        const nameInput = document.getElementById('name');
-        const messageInput = document.getElementById('message');
+        // Elementos del DOM
         const messagesDiv = document.getElementById('messages');
+        const form = document.getElementById('form');
+        const usernameInput = document.getElementById('username');
+        const messageInput = document.getElementById('message');
 
-        // Enviar mensaje al servidor
-        form.addEventListener('submit', (event) => {
-            event.preventDefault();
+        // Mostrar mensajes existentes
+        socket.on('messages', (mensajes) => {
+            mensajes.forEach(mensaje => {
+                const messageElement = document.createElement('div');
+                messageElement.textContent = `${mensaje.username}: ${mensaje.message}`;
+                messagesDiv.appendChild(messageElement);
 
-            const name = nameInput.value.trim();
-            const message = messageInput.value.trim();
-
-            if (name && message) {
-                socket.emit('chat_message', { name, message });
-                messageInput.value = ''; // Limpiar campo de mensaje
-            }
+                // Desplazar hacia abajo automáticamente
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            });
         });
 
-        // Escuchar mensajes desde el servidor
-        socket.on('chat_message', (data) => {
+        // Escuchar nuevos mensajes desde el servidor
+        socket.on('receiveMessage', (data) => {
             const messageElement = document.createElement('div');
-            messageElement.textContent = `${data.name}: ${data.message}`;
+            messageElement.textContent = `${data.username}: ${data.message}`;
             messagesDiv.appendChild(messageElement);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto-scroll al final
+
+            // Desplazar hacia abajo automáticamente
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        });
+
+        // Enviar mensaje al servidor
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const username = usernameInput.value;
+            const message = messageInput.value;
+
+            if (username && message) {
+                socket.emit('sendMessage', { username, message });
+                messageInput.value = ''; // Limpiar el campo de mensaje
+            }
         });
     </script>
 </body>
