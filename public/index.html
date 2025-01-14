@@ -80,9 +80,8 @@
         </form>
     </div>
 
-    <script>
-        const PORT = 10000;
-        const socket = io(`http://localhost:${PORT}`);
+    <script type="module">
+        const socket = io(window.location.origin);
 
         // Elementos del DOM
         const messagesDiv = document.getElementById('messages');
@@ -92,24 +91,14 @@
 
         // Mostrar mensajes existentes
         socket.on('messages', (mensajes) => {
-            mensajes.forEach(mensaje => {
-                const messageElement = document.createElement('div');
-                messageElement.textContent = `${mensaje.username}: ${mensaje.message}`;
-                messagesDiv.appendChild(messageElement);
-
-                // Desplazar hacia abajo automáticamente
-                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            mensajes.forEach(data => {
+                createMsg(data)
             });
         });
 
         // Escuchar nuevos mensajes desde el servidor
-        socket.on('receiveMessage', (data) => {
-            const messageElement = document.createElement('div');
-            messageElement.textContent = `${data.username}: ${data.message}`;
-            messagesDiv.appendChild(messageElement);
-
-            // Desplazar hacia abajo automáticamente
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        socket.on('receive message', (data) => {
+            createMsg(data)
         });
 
         // Enviar mensaje al servidor
@@ -120,10 +109,19 @@
             const message = messageInput.value;
 
             if (username && message) {
-                socket.emit('sendMessage', { username, message });
+                socket.emit('send message', { username, message });
                 messageInput.value = ''; // Limpiar el campo de mensaje
             }
         });
+
+        function createMsg(data) {
+            const messageElement = document.createElement('div');
+            messageElement.textContent = `${data.username}: ${data.message}`;
+            messagesDiv.appendChild(messageElement);
+
+            // Desplazar hacia abajo automáticamente
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
     </script>
 </body>
 

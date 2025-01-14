@@ -9,7 +9,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
-const PORT = process.env.PORT || 10000;
+const PORT = process.env.PORT ?? 10000;
 
 // Conectar a MongoDB Atlas usando Mongoose
 const mongoURI = process.env.MONGO_URI;
@@ -43,12 +43,10 @@ io.on('connection', async (socket) => {
     console.log('Un usuario se ha conectado');
 
     const mensajes = await Message.find();
-    console.log(mensajes);
-    
-    socket.emit("messages",mensajes);
+    io.emit("messages",mensajes);
 
     // Escuchar un mensaje del cliente
-    socket.on('sendMessage', async (data) => {
+    socket.on('send message', async (data) => {
         const { username, message } = data;
 
         // Guardar el mensaje en MongoDB
@@ -57,7 +55,7 @@ io.on('connection', async (socket) => {
             await nuevoMensaje.save();
 
             // Emitir el mensaje a todos los usuarios conectados
-            io.emit('receiveMessage', nuevoMensaje);
+            io.emit('receive message', nuevoMensaje);
         } catch (err) {
             console.log("Error al guardar el mensaje", err);
         }
