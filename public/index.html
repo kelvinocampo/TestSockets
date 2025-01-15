@@ -89,11 +89,14 @@
         const usernameInput = document.getElementById('username');
         const messageInput = document.getElementById('message');
 
-        // Mostrar mensajes existentes
-        socket.on('messages', (mensajes) => {
+        // Mostrar mensajes existentes al iniciar chat
+        let initChat = false;
+        socket.on('init chat', (mensajes) => {
+            if (initChat) return;
             mensajes.forEach(data => {
-                createMsg(data)
+                createMsg(data);
             });
+            initChat = true;
         });
 
         // Escuchar nuevos mensajes desde el servidor

@@ -28,22 +28,12 @@ const Message = mongoose.model('Message', mensajeSchema);
 app.use(express.json())
     .use(express.static('public'));
 
-// Endpoint para obtener todos los mensajes
-app.get('/messages', async (req, res) => {
-    try {
-        const mensajes = await Message.find();
-        res.status(200).json(mensajes);
-    } catch (err) {
-        res.status(500).send("Error al obtener los mensajes");
-    }
-});
-
 // Configurar Socket.IO para escuchar conexiones y mensajes
 io.on('connection', async (socket) => {
     console.log('Un usuario se ha conectado');
 
     const mensajes = await Message.find();
-    io.emit("messages",mensajes);
+    io.emit("init chat", mensajes);
 
     // Escuchar un mensaje del cliente
     socket.on('send message', async (data) => {
