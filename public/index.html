@@ -36,10 +36,45 @@
             margin-bottom: 10px;
             padding: 10px;
             background: #fafafa;
+            display: flex;
+            flex-direction: column;
+            justify-content: start;
+            align-items: center;
         }
 
-        #messages div {
-            margin-bottom: 10px;
+        .message {
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 90%;
+            gap: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+        }
+
+        .options {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .edit {
+            background: #28a745;
+
+            &:hover {
+                background: #218838;
+            }
+        }
+
+        .delete {
+            background: #dc3545;
+
+            &:hover {
+                background: #c82333;
+            }
         }
 
         #form {
@@ -89,19 +124,18 @@
         const usernameInput = document.getElementById('username');
         const messageInput = document.getElementById('message');
 
-        // Mostrar mensajes existentes al iniciar chat
-        let initChat = false;
-        socket.on('init chat', (mensajes) => {
-            if (initChat) return;
-            mensajes.forEach(data => {
-                createMsg(data);
-            });
-            initChat = true;
-        });
+        // Cargar mensajes existentes
+        fetchMessages();
 
         // Escuchar nuevos mensajes desde el servidor
         socket.on('receive message', (data) => {
-            createMsg(data)
+            createMsg(data);
+        });
+
+        // Escuchar eliminaciones de mensajes
+        socket.on('delete message', (id) => {
+            const messageElement = document.getElementById(id);
+            if (messageElement) messageElement.remove();
         });
 
         // Enviar mensaje al servidor
@@ -117,13 +151,37 @@
             }
         });
 
+        // Obtener mensajes históricos
+        async function fetchMessages() {
+            const response = await fetch(`${window.location.origin}/messages`);
+            const mensajes = await response.json();
+            mensajes.forEach(data => {
+                createMsg(data);
+            });
+        }
+
+        // Crear elemento para cada mensaje
         function createMsg(data) {
             const messageElement = document.createElement('div');
-            messageElement.textContent = `${data.username}: ${data.message}`;
+            messageElement.classList.add('message');
+            messageElement.id = data._id; // Usar el ID del mensaje para identificarlo
+            messageElement.innerHTML = `
+                <p>${data.username}: ${data.message}</p>
+                <div class="options">
+                    <button class="edit">Editar</button>
+                    <button class="delete">Eliminar</button>
+                </div>
+            `;
+            messageElement.querySelector('.delete').onclick = () => { deleteMessage(data._id) }
             messagesDiv.appendChild(messageElement);
 
             // Desplazar hacia abajo automáticamente
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // Eliminar mensaje
+        function deleteMessage(id) {
+            socket.emit('delete message', id);
         }
     </script>
 </body>

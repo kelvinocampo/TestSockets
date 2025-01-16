@@ -21,6 +21,7 @@ mongoose.connect(mongoURI)
 const mensajeSchema = new mongoose.Schema({
     username: String,
     message: String,
+    date: { type: Date, default: Date.now },
 });
 const Message = mongoose.model('Message', mensajeSchema);
 
@@ -28,18 +29,19 @@ const Message = mongoose.model('Message', mensajeSchema);
 app.use(express.json())
     .use(express.static('public'));
 
-// Configurar Socket.IO para escuchar conexiones y mensajes
+app.get("/messages", async (_, res) => {
+    const mensajes = await Message.find().sort({ date: 1 });
+    return res.status(200).json(mensajes)
+})
+
+// Escuchar eventos de conexión
 io.on('connection', async (socket) => {
     console.log('Un usuario se ha conectado');
-
-    const mensajes = await Message.find();
-    io.emit("init chat", mensajes);
 
     // Escuchar un mensaje del cliente
     socket.on('send message', async (data) => {
         const { username, message } = data;
 
-        // Guardar el mensaje en MongoDB
         try {
             const nuevoMensaje = new Message({ username, message });
             await nuevoMensaje.save();
@@ -48,6 +50,18 @@ io.on('connection', async (socket) => {
             io.emit('receive message', nuevoMensaje);
         } catch (err) {
             console.log("Error al guardar el mensaje", err);
+        }
+    });
+
+    // Escuchar solicitud para eliminar un mensaje
+    socket.on('delete message', async (id) => {
+        try {
+            await Message.findByIdAndDelete(id);
+
+            // Emitir evento para eliminar el mensaje en todos los clientes
+            io.emit('delete message', id);
+        } catch (err) {
+            console.log("Error al eliminar el mensaje", err);
         }
     });
 
